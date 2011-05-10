@@ -67,19 +67,19 @@ proto
     ;
 
 decl
-    : package (Syntax.PackageD package)
-    | import (Syntax.ImportD import)
-    | messagedecl (Syntax.MessageD messagedecl)
-    | enumdecl (Syntax.EnumD enumdecl)
-    | servicedecl (Syntax.ServiceD servicedecl)
+    : package => (Syntax.PackageD package)
+    | import => (Syntax.ImportD import)
+    | messagedecl => (Syntax.MessageD messagedecl)
+    | enumdecl => (Syntax.EnumD enumdecl)
+    | servicedecl => (Syntax.ServiceD servicedecl)
     ;
 
 package
-    : STR (Syntax.Package STR)
+    : "package" STR ";" => (Syntax.Package STR)
     ;
 
 import
-    : STR (Syntax.Import STR)
+    : "import" STR ";" => (Syntax.Import STR)
     ;
 
 
@@ -108,7 +108,7 @@ fielddecllist
     : (fielddecl)*
     ;
 
-fieldecl
+fielddecl
     : modifier gentype ID "=" FIELDNUMBER ";"
         => ( Syntax.TypedeclF (ID, modifier, gentype, FIELDNUMBER) )
     | messagedecl => ( Syntax.MessagedeclF messagedecl )
@@ -148,4 +148,10 @@ basetype
     | UNIT => ( Syntax.Unit )
     ;
 
+
+modifier
+    : REQUIRED => ( Syntax.Required )
+    | OPTIONAL => ( Syntax.Optional )
+    | REPEATED => ( Syntax.Repeated )
+    ;
 
