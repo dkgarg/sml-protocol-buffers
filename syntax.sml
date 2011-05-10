@@ -51,7 +51,7 @@ and messagedecl = Messagedecl of identifier * fielddecl list
 datatype rpcdecl = Rpcdecl of identifier * gentype * gentype
                    (* rp ID (ARGTYPE) returns (RETTYPE) *)
 
-datatype servicedecl = ServiceDecl of identifier * rpcdecl list
+datatype servicedecl = Servicedecl of identifier * rpcdecl list
 
 datatype package = Package of string
 

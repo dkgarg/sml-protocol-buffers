@@ -85,7 +85,7 @@ import
 
 servicedecl
     : "service" ID "{" rpcdecllist "}" 
-        => ( Syntax.Service (ID, rpcdecllist) )
+        => ( Syntax.Servicedecl (ID, rpcdecllist) )
     ;
 
 
@@ -95,13 +95,13 @@ rpcdecllist
 
 rpcdecl
     : "rpc" ID "(" gentype ")" "returns" "(" gentype ")"
-        => ( Sytax.Rpcdecl (ID, gentype1, gentype2) )
+        => ( Syntax.Rpcdecl (ID, gentype1, gentype2) )
     ;
 
 
 messagedecl 
     : "message" ID "{" fielddecllist "}"
-        => ( Syntax.Messagedecl fielddecllist )
+        => ( Syntax.Messagedecl (ID, fielddecllist) )
     ;
 
 fielddecllist
