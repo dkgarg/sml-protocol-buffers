@@ -79,7 +79,7 @@ THE SOFTWARE.
 <INITIAL> "=" => (EQ);
 <INITIAL> ";" => (SEMICOLON);
 <INITIAL> "{" => (LBRACE);
-<INITIAL> "}" => (LBRACE);
+<INITIAL> "}" => (RBRACE);
 <INITIAL> "service" => (SERVICE);
 <INITIAL> "(" => (LPAREN);
 <INITIAL> ")" => (RPAREN);

@@ -9,3 +9,5 @@ Group is
       pb.lex: ml-ulex
 
       pb-parser.sml
+
+      test-parser.sml
