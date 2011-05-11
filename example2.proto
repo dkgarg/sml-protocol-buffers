@@ -1,0 +1,9 @@
+
+package abc;
+
+enum my_bool {
+     my_false = 1;
+     my_true = 2;
+}
+
+
