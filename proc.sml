@@ -100,9 +100,9 @@ fun find_symbol name (root : protofiletree) (found : bool) : bool = (
         ProtoFileTree (pkg_opt, [], []) => found
       | ProtoFileTree (pkg_opt, d :: dl, subtree) => (
             case d of 
-                (Syntax.MessageD (Syntax.Messagedecl (ident, _))) => 
+                (Syntax.MessageD (Syntax.Messagedecl (ident, _))) =>
                     find_symbol name (ProtoFileTree (pkg_opt, dl, subtree)) (check_dup ident name found)
-              | (Syntax.EnumD (Syntax.Enumdecl (ident, _))) => 
+               | (Syntax.EnumD (Syntax.Enumdecl (ident, _))) => 
                     find_symbol name (ProtoFileTree (pkg_opt, dl, subtree)) (check_dup ident name found)
                | _ => find_symbol name (ProtoFileTree (pkg_opt, dl, subtree)) found
             )
@@ -114,7 +114,8 @@ fun find_symbol name (root : protofiletree) (found : bool) : bool = (
           end
     )
 (* checks whether s matches s', and if it does, that this is not a duplicated definition *)
-and check_dup ident ident' found =
+and check_dup ident ident' found = (
   if ident = ident' andalso found then raise DuplicateSymbolDefinition
-  else ident = ident'
+  else (ident = ident' orelse found)
+  )
 end
