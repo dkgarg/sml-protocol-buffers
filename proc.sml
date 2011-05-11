@@ -37,9 +37,21 @@ exception DuplicatePackageDeclaration
 
 datatype protofiletree = ProtoFileTree of Syntax.package Option.option * Syntax.proto * protofiletree list
 
-(* Output the imports of a file recursively. The first argument is the
-list of files that have been seen in outer contexts, in reverse order,
-i.e., most recent context is first. *)
+(* Convert a protofiletree to string by a post-order traversal *)
+
+fun protofiletree_to_string (ProtoFileTree (pkg_opt, proto, tl)): string = 
+    let val s1 = String.concatWith "" (List.map protofiletree_to_string tl)
+	val s2 = case pkg_opt of
+		     NONE => ""
+		   | SOME pkg => Syntax.package_to_string pkg
+	val s3 = Syntax.proto_to_string proto
+    in
+	s1 ^ s2 ^ s3 ^ "--------\n"
+    end
+
+
+(* Process a file by converting its imports into a tree
+   structure. *)
 
 fun expand_paths (fl: string list) (dl: Syntax.proto): protofiletree = 
     case dl of
@@ -75,18 +87,19 @@ fun expand_paths (fl: string list) (dl: Syntax.proto): protofiletree =
 		      )
 	     )
 	   | Syntax.PackageD pkg =>
+	     (* Package declaration *)
 	     let val (ProtoFileTree (pkg_opt, proto, tree)) = expand_paths fl dl
 	     in
 		 case pkg_opt of
 		     NONE => ProtoFileTree (SOME pkg, proto, tree)
 		   | SOME _ => 
-		     (print ("More than one package declaration in file: " ^ (hd fl) ^ "\n" ^
+		     (print ("More than one package declaration in file: " ^ (hd fl)  ^ "\n" ^
 			     (import_path_to_string fl));
 		      raise DuplicatePackageDeclaration
 		     )
 	     end
 	   | _ => 
-	     (* Non-import, non-package declaration; continue *)
+	     (* Non-import, non-package declaration *)
 	     let val (ProtoFileTree (pkg_opt, proto, tree)) = expand_paths fl dl
 	     in
 		 ProtoFileTree (pkg_opt, d :: proto, tree)
@@ -94,4 +107,42 @@ fun expand_paths (fl: string list) (dl: Syntax.proto): protofiletree =
 	)
 
 
+(* Check that the field numbers are all unique *)
+
+local
+    open Syntax 
+in
+fun check_fn_proto [] = ()
+  | check_fn_proto (d :: dl) =
+    (case d of
+	 PackageD _ => ()
+       | ImportD _ => ()
+       | MessageD md => check_fn_messagedecl md
+       | Enumd ed => check_fn_enumdecl ed
+       | ServiceD _ => ();
+     check_fn_proto dl
+    )
+and check_fn_messagedecl (Messagedecl (_, fielddecllist)) =
+    check_fn_fielddecllist [] fielddecllist
+
+and check_fn_fielddecllist inlist [] = ()
+  | check_fn_fielddecllist inlist ((TypedeclF (_, _, _, n)) :: dl) =
+    if (List.exists (fn i => i = n) inlist)
+    then 
+	raise ...
+    else 
+	check_fn_fielddecllist (n :: inlist) dl
+  | check_fn_fielddecllist inlist ((MessagedeclF md) :: dl) =
+    (check_fn_messagedecl md; check_fn_fielddecllist inlist dl)
+  | check_fn_fielddecllist inlist ((EnumdeclF ed) :: dl) =
+    (check_fn_enumdecl ed; check_fn_fielddecllist inlist dl)
+
+and check_fn_enumdecl (Enumdecl (_, efielddecllist)) =
+    check_fn_efielddecllist [] efielddecllist
+
+and check_fn_efielddecllist inlist [] = ()
+  | check_fn_efielddecllist inlist (Efielddecl (_, n) :: dl) =
+    
+
+end (* local *)
 end
