@@ -5,4 +5,4 @@ Group is
 
       syntax.sml
 
-      protocolbuffers.g: ml-antlr
+      pb.g: ml-antlr
