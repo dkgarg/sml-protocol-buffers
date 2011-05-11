@@ -1,5 +1,4 @@
-
-package abc;
+import "example2b.proto";
 
 enum my_bool {
      my_false = 1;
@@ -7,3 +6,4 @@ enum my_bool {
 }
 
 
+import "example2a.proto";
