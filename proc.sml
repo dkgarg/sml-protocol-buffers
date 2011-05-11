@@ -145,4 +145,30 @@ and check_fn_efielddecllist inlist [] = ()
     
 
 end (* local *)
+
+exception DuplicateSymbolDefinition
+(* checks that name occurs in root exactly once. throws DuplicateSymbolDefinition if it appears twice *)
+fun find_symbol name (root : protofiletree) (found : bool) : bool = (
+    case root of
+        ProtoFileTree (pkg_opt, [], []) => found
+      | ProtoFileTree (pkg_opt, d :: dl, subtree) => (
+            case d of 
+                (Syntax.MessageD (Syntax.Messagedecl (ident, _))) => 
+                    find_symbol name (ProtoFileTree (pkg_opt, dl, subtree)) (check_dup ident name found)
+              | (Syntax.EnumD (Syntax.Enumdecl (ident, _))) => 
+                    find_symbol name (ProtoFileTree (pkg_opt, dl, subtree)) (check_dup ident name found)
+               | _ => find_symbol name (ProtoFileTree (pkg_opt, dl, subtree)) found
+            )
+      | ProtoFileTree (pkg_opt, [], (child :: subtree)) =>
+          let
+            val found' = find_symbol name child found
+          in
+            find_symbol name (ProtoFileTree (pkg_opt, [], subtree)) found'
+          end
+    )
+(* checks whether s matches s', and if it does, that this is not a duplicated definition *)
+and check_dup ident ident' found =
+  if ident = ident' andalso found then raise DuplicateSymbolDefinition
+  else ident = ident'
+
 end
