@@ -63,4 +63,95 @@ datatype decl = PackageD of package
 
 type proto = decl list 
 
+
+
+(* Function to convert to string *)
+
+fun map_and_concat (f: 'a -> string) (l: 'a list): string = 
+    String.concatWith "" (List.map f l)
+
+fun fieldnumber_to_string i = Int.toString i
+
+fun identifier_to_string id = id
+
+fun modifier_to_string Required = "required"
+  | modifier_to_string Optional = "optional"
+  | modifier_to_string Repeated = "repeated"
+
+
+fun gentype_to_string t =
+    case t of
+	Double => "double"
+      | Float => "float"
+      | Int32 => "int32"
+      | Int64 => "int64"
+      | Uint32 => "uint32"
+      | Uint64 => "uint64"
+      | Bool => "bool"
+      | String => "string"
+      | Bytes => "bytes"
+      | Unit => "unit"
+      | UserT id => identifier_to_string id
+
+
+fun whitespace 0 = ""
+  | whitespace n = " " ^ (whitespace (n-1))
+
+val std_indent = whitespace 3
+
+fun fielddecl_to_string indent f =
+    case f of
+	TypedeclF (id, m, t, f) =>
+	indent ^ (modifier_to_string m) ^ " " ^ 
+	(gentype_to_string t) ^ " " ^ (identifier_to_string id) ^ " = " ^
+	(fieldnumber_to_string f) ^ ";\n"
+
+      | MessagedeclF md =>
+	messagedecl_to_string indent md
+
+      | EnumdeclF ed =>
+	enumdecl_to_string indent ed
+
+and efielddecl_to_string indent (Efielddecl (id, f)) =
+    indent ^ (identifier_to_string id) ^ " = " ^ (fieldnumber_to_string f) ^ ";\n"
+
+and messagedecl_to_string indent (Messagedecl(id, fdl)) =
+    indent ^ "message " ^ (identifier_to_string id) ^ " {\n" ^
+    (map_and_concat (fielddecl_to_string (indent ^ std_indent)) fdl) ^
+    indent ^ "}\n"
+
+and enumdecl_to_string indent (Enumdecl (id, efdl)) =
+    indent ^ "enum " ^ (identifier_to_string id) ^ " {\n" ^
+    (map_and_concat (efielddecl_to_string (indent ^ std_indent)) efdl) ^
+    indent ^ "}\n"
+
+
+fun rpcdecl_to_string indent (Rpcdecl (id, ta, tr)) = 
+    indent ^ "rpc " ^ (identifier_to_string id) ^ "(" ^
+    (gentype_to_string ta) ^ ") returns (" ^
+    (gentype_to_string tr) ^ ");\n"
+
+
+fun servicedecl_to_string (Servicedecl (id, rl)) =
+    "service " ^ (identifier_to_string id) ^ " {\n" ^
+    (map_and_concat (rpcdecl_to_string std_indent) rl) ^ 
+    "}\n"
+
+fun package_to_string (Package sl) = 
+    "package " ^ (String.concatWith "." sl) ^ ";\n"
+
+fun import_to_string (Import s) =
+    "import \"" ^ s ^ "\";\n"
+
+fun decl_to_string d =
+    case d of
+	PackageD p => package_to_string p
+      | ImportD i => import_to_string i
+      | MessageD m => messagedecl_to_string (whitespace 0) m
+      | EnumD e => enumdecl_to_string (whitespace 0) e
+      | ServiceD s => servicedecl_to_string s
+
+fun proto_to_string p =
+    map_and_concat decl_to_string p
+
 end
