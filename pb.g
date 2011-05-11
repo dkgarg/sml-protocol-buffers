@@ -23,7 +23,7 @@ THE SOFTWARE.
 
 *)
 
-%name ProtocolBuffers;
+%name PB;
 
 %tokens
     : MESSAGE ("message")
