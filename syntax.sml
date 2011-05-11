@@ -65,10 +65,11 @@ type proto = decl list
 
 
 
-(* Function to convert to string *)
+(* Functions to convert the syntax to string *)
 
 fun map_and_concat (f: 'a -> string) (l: 'a list): string = 
     String.concatWith "" (List.map f l)
+
 
 fun fieldnumber_to_string i = Int.toString i
 
@@ -138,7 +139,9 @@ fun servicedecl_to_string (Servicedecl (id, rl)) =
     "}\n"
 
 fun package_to_string (Package sl) = 
-    "package " ^ (String.concatWith "." sl) ^ ";\n"
+    if sl = [] then "" 
+    else
+	"package " ^ (String.concatWith "." sl) ^ ";\n"
 
 fun import_to_string (Import s) =
     "import \"" ^ s ^ "\";\n"

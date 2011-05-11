@@ -9,5 +9,6 @@ Group is
       pb.lex: ml-ulex
 
       pb-parser.sml
+      proc.sml
 
       test-parser.sml
