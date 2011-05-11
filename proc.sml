@@ -24,57 +24,26 @@ THE SOFTWARE.
 
 structure Proc = struct
 
-type packeddecl = Syntax.package * Syntax.proto
-
-fun packeddecl_to_string (pkg, dl) = 
-    (Syntax.package_to_string pkg) ^
-    (Syntax.proto_to_string dl)
-
 fun import_path_to_string (fl: string list) = 
     "Import trace is:\n" ^ (String.concatWith "\n" fl)
-
-fun check_no_package (dl: Syntax.proto) = 
-    case dl of
-	[] => true
-      | (Syntax.PackageD _) :: _ => false
-      | _ :: dl' => check_no_package dl'
-
-exception DuplicatePackageDeclaration
-
-(* Extract the package name from a parsed proto file. Raise exception
-   if two packages are listed. *)
-
-fun extract_package (fl: string list) (dl: Syntax.proto): packeddecl =
-    case dl of
-	[] => (Syntax.Package [], [])
-      | (Syntax.PackageD pck) :: dl' =>
-	if (check_no_package dl')
-	then 
-	    (pck, dl')
-	else
-	    (print ("More than one package declaration in file: " ^ (hd fl) ^ "\n" ^
-		    (import_path_to_string fl));
-	     raise DuplicatePackageDeclaration
-	    )
-      | d :: dl' =>
-	let val (pck, dl'') = extract_package fl dl'
-	in
-	    (pck, d :: dl'')
-	end
 
 fun realpath f = (SOME (OS.FileSys.realPath f)) handle _ => NONE
 
 exception ImportPathNotResolved
 exception ImportPathCycle
 exception ImportNotParsed
+exception DuplicatePackageDeclaration
+
+
+datatype protofiletree = ProtoFileTree of Syntax.package Option.option * Syntax.proto * protofiletree list
 
 (* Output the imports of a file recursively. The first argument is the
 list of files that have been seen in outer contexts, in reverse order,
 i.e., most recent context is first. *)
 
-fun expand_paths (fl: string list) (dl: Syntax.proto): packeddecl list = 
+fun expand_paths (fl: string list) (dl: Syntax.proto): protofiletree = 
     case dl of
-	[] => []
+	[] => ProtoFileTree (NONE, [], [])
       | (d :: dl) =>
 	(case d of
 	     Syntax.ImportD (Syntax.Import i) => 
@@ -98,15 +67,30 @@ fun expand_paths (fl: string list) (dl: Syntax.proto): packeddecl list =
 				    raise ImportNotParsed)
 				   
 			 | SOME dl' => 
-			   let val (pkg, dl'') = extract_package (path :: fl) dl'
+			   let val ret' = expand_paths (path :: fl) dl'
+			       val (ProtoFileTree (pkg_opt, proto, tree)) = expand_paths fl dl
 			   in
-			       (pkg, dl'') :: ((expand_paths (path :: fl) dl'') @ (expand_paths fl dl))
+			       ProtoFileTree (pkg_opt, proto, ret' :: tree)
 			   end
 		      )
 	     )
+	   | Syntax.PackageD pkg =>
+	     let val (ProtoFileTree (pkg_opt, proto, tree)) = expand_paths fl dl
+	     in
+		 case pkg_opt of
+		     NONE => ProtoFileTree (SOME pkg, proto, tree)
+		   | SOME _ => 
+		     (print ("More than one package declaration in file: " ^ (hd fl) ^ "\n" ^
+			     (import_path_to_string fl));
+		      raise DuplicatePackageDeclaration
+		     )
+	     end
 	   | _ => 
-	     (* Non-import declaration; continue *)
-	     expand_paths fl dl
+	     (* Non-import, non-package declaration; continue *)
+	     let val (ProtoFileTree (pkg_opt, proto, tree)) = expand_paths fl dl
+	     in
+		 ProtoFileTree (pkg_opt, d :: proto, tree)
+	     end
 	)
 
 

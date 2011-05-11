@@ -24,18 +24,19 @@ THE SOFTWARE.
 
 structure TestParser = struct
 
-fun obtain f = ((Option.map (Proc.expand_paths [f])) o PBParser.parse_pb_file) f
 
-fun test (f: string) = 
-    case PBParser.parse_pb_file f of
-	NONE => ()
-      | SOME proto =>
-	let val _ = print (Syntax.proto_to_string proto)
-	    val pdl = Proc.expand_paths [f] proto
-	in
-	    print (String.concatWith "\n" 
-				     (List.map Proc.packeddecl_to_string pdl)
-		  )
-	end
+(* fun obtain f = ((Option.map (Proc.expand_paths [f])) o PBParser.parse_pb_file) f *)
+
+(* fun test (f: string) =  *)
+(*     case PBParser.parse_pb_file f of *)
+(* 	NONE => () *)
+(*       | SOME proto => *)
+(* 	let val _ = print (Syntax.proto_to_string proto) *)
+(* 	    val pdl = Proc.expand_paths [f] proto *)
+(* 	in *)
+(* 	    print (String.concatWith "\n"  *)
+(* 				     (List.map Proc.packeddecl_to_string pdl) *)
+(* 		  ) *)
+(* 	end *)
 
 end
