@@ -177,8 +177,7 @@ fun find_symbol name (root : protofiletree) (found : bool) : bool = (
           end
     )
 (* checks whether s matches s', and if it does, that this is not a duplicated definition *)
-and check_dup ident ident' found = (
+and check_dup ident ident' found =
   if ident = ident' andalso found then raise DuplicateSymbolDefinition
   else (ident = ident' orelse found)
-  )
 end
