@@ -41,6 +41,9 @@ fun check_no_package (dl: Syntax.proto) =
 
 exception DuplicatePackageDeclaration
 
+(* Extract the package name from a parsed proto file. Raise exception
+   if two packages are listed. *)
+
 fun extract_package (fl: string list) (dl: Syntax.proto): packeddecl =
     case dl of
 	[] => (Syntax.Package [], [])
