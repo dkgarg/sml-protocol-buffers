@@ -109,6 +109,8 @@ fun expand_paths (fl: string list) (dl: Syntax.proto): protofiletree =
 
 (* Check that the field numbers are all unique *)
 
+exception DuplicateFieldNumber
+
 local
     open Syntax 
 in
@@ -118,7 +120,7 @@ fun check_fn_proto [] = ()
 	 PackageD _ => ()
        | ImportD _ => ()
        | MessageD md => check_fn_messagedecl md
-       | Enumd ed => check_fn_enumdecl ed
+       | EnumD ed => check_fn_enumdecl ed
        | ServiceD _ => ();
      check_fn_proto dl
     )
@@ -129,7 +131,9 @@ and check_fn_fielddecllist inlist [] = ()
   | check_fn_fielddecllist inlist ((TypedeclF (_, _, _, n)) :: dl) =
     if (List.exists (fn i => i = n) inlist)
     then 
-	raise ...
+	(print ("Duplicate field number: " ^ (Int.toString n) ^
+		" in message declaration\n");
+	 raise DuplicateFieldNumber)
     else 
 	check_fn_fielddecllist (n :: inlist) dl
   | check_fn_fielddecllist inlist ((MessagedeclF md) :: dl) =
@@ -141,10 +145,16 @@ and check_fn_enumdecl (Enumdecl (_, efielddecllist)) =
     check_fn_efielddecllist [] efielddecllist
 
 and check_fn_efielddecllist inlist [] = ()
-  | check_fn_efielddecllist inlist (Efielddecl (_, n) :: dl) =
-    
-
+  | check_fn_efielddecllist inlist ((efl as (Efielddecl (_, n))) :: dl) =
+    if (List.exists (fn i => i = n) inlist)
+    then 
+	(print ("Duplicate field number: " ^ (Int.toString n) ^
+		" in enum declaration\n");
+	 raise DuplicateFieldNumber)
+    else 
+	check_fn_efielddecllist (n :: inlist) dl
 end (* local *)
+
 
 exception DuplicateSymbolDefinition
 (* checks that name occurs in root exactly once. throws DuplicateSymbolDefinition if it appears twice *)

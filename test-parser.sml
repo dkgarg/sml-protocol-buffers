@@ -30,6 +30,7 @@ fun test (f: string) =
 	NONE => ()
       | SOME proto =>
 	let val _ = print (Syntax.proto_to_string proto)
+	    val _ = Proc.check_fn_proto proto
 	    val _ = print "#########################\n"
 	    val tree = Proc.expand_paths [f] proto
 	in
