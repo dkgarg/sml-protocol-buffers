@@ -56,7 +56,6 @@ THE SOFTWARE.
     | ID of string
     | FIELDNUMBER of int
     | STR of string
-    | START_PROTO 
     ;
 
 %start proto;
@@ -75,7 +74,12 @@ decl
     ;
 
 package
-    : "package" STR ";" => (Syntax.Package STR)
+    : "package" packagename ";" => (Syntax.Package packagename)
+    ;
+
+packagename
+    : ID => ([ID])
+    | ID "." packagename => (ID :: packagename)
     ;
 
 import
@@ -112,7 +116,7 @@ fielddecl
     : modifier gentype ID "=" FIELDNUMBER ";"
         => ( Syntax.TypedeclF (ID, modifier, gentype, FIELDNUMBER) )
     | messagedecl => ( Syntax.MessagedeclF messagedecl )
-    | enumdecl => (Syntax.EnumdeclF enumdecl )
+    | enumdecl => ( Syntax.EnumdeclF enumdecl )
     ;
 
 enumdecl
@@ -131,27 +135,23 @@ efielddecl
 
 
 gentype
-    : basetype => ( Syntax.BaseT basetype )
+    : "double" => ( Syntax.Double )
+    | "float" => ( Syntax.Float )
+    | "int32" => ( Syntax.Int32 )
+    | "int64" => ( Syntax.Int64 )
+    | "uint32" => ( Syntax.Uint32 )
+    | "uint64" => ( Syntax.Uint64 )
+    | "bool" => ( Syntax.Bool )
+    | "string" => ( Syntax.String )
+    | "bytes" => ( Syntax.Bytes )
+    | "unit" => ( Syntax.Unit )
     | ID => ( Syntax.UserT ID )
-    ;
-
-basetype
-    : DOUBLE => ( Syntax.Double )
-    | FLOAT => ( Syntax.Float )
-    | INT32 => ( Syntax.Int32 )
-    | INT64 => ( Syntax.Int64 )
-    | UINT32 => ( Syntax.Uint32 )
-    | UINT64 => ( Syntax.Uint64 )
-    | BOOL => ( Syntax.Bool )
-    | STRING => ( Syntax.String )
-    | BYTES => ( Syntax.Bytes )
-    | UNIT => ( Syntax.Unit )
     ;
 
 
 modifier
-    : REQUIRED => ( Syntax.Required )
-    | OPTIONAL => ( Syntax.Optional )
-    | REPEATED => ( Syntax.Repeated )
+    : "required" => ( Syntax.Required )
+    | "optional" => ( Syntax.Optional )
+    | "repeated" => ( Syntax.Repeated )
     ;
 

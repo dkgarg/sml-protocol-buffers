@@ -36,109 +36,71 @@ THE SOFTWARE.
 %let special = "_"|"'"|"@"|"-"|"$"|"#"|"/";
 %let genchar={lletter}|{uletter}|{digit}|{special};
 
-%let opencomment="(*";
-%let closecomment="*)";
 %let openlinecomment="%";
 
 %let iden=({letter}|"_")({letter}|{special}|{digit})*;
-%let integer=(("~") | ("-"))?{digit}+;
+%let integer=("-")?{digit}+;
 
 %let date=({digit}+":"{digit}+":"{digit}+)(":"{digit}+":"{digit}+":"{digit}+)? ;
 
-%let str="\""{validstrvalue}*"\"";
+%let str={stringlimit}{validstrvalue}*{stringlimit};
 
 %let eoflimiter = "%#parse_end#%";
 
-%let start_formula = "%#parse_formula#%";
-%let start_term = "%#parse_term#%";
-
 
 %defs (
-  open FolTokens
+  open PBTokens
   type lex_result = token
   fun eof() = EOF
 
   fun extractstring s = String.substring (s, 1, (String.size s) - 2)
 
 
-  fun toMonth (1) = Date.Jan
-  | toMonth (2) = Date.Feb
-  | toMonth (3) = Date.Mar
-  | toMonth (4) = Date.Apr
-  | toMonth (5) = Date.May
-  | toMonth (6) = Date.Jun
-  | toMonth (7) = Date.Jul
-  | toMonth (8) = Date.Aug
-  | toMonth (9) = Date.Sep
-  | toMonth (10) = Date.Oct
-  | toMonth (11) = Date.Nov
-  | toMonth (12) = Date.Dec
-  | toMonth n = toMonth (n mod 12 + 1)
-  
-  fun string2date s = 
-  let val sl = String.tokens (fn (#":") => true | _ => false) s
-      val ints = map (Option.valOf o Int.fromString) sl
-      val ints2 = if (length(ints) = 6) then ints else ints @ [0,0,0]
-      val arr = Array.fromList ints2
-  in
-	 Date.toTime (Date.date ({year = Array.sub(arr,0), month = toMonth(Array.sub(arr,1)),
-				  day = Array.sub(arr,2), hour = Array.sub(arr, 3), 
-				  minute = Array.sub(arr,4), second = Array.sub(arr, 5),
-		                  offset = NONE}))
-	(* offset = NONE means that we are measuring local time. This means that to convert 
-           back from Time.time to Date.date we must use Date.fromTimeLocal, not 
-           Date.fromUTC. 
-         *)
-  end
-
-
 );
 
-%states COMMENT LINECOMMENT;
+%states LINECOMMENT;
 
 
 <INITIAL> {ws} => (continue());
 {eoflimiter} => (eof());
 
-<INITIAL> {start_formula} => (START_FORMULA);
-<INITIAL> {start_term} => (START_TERM);
-
-<INITIAL> {opencomment} => (YYBEGIN(COMMENT); continue());
-<COMMENT> {closecomment} => (YYBEGIN(INITIAL); continue());
-<COMMENT> .  => (continue());
-
 <INITIAL> {openlinecomment} => (YYBEGIN(LINECOMMENT); continue());
 <LINECOMMENT> {endline} => (YYBEGIN(INITIAL); continue());
 <LINECOMMENT> . => (continue());
 
-<INITIAL> ":" => (COLON);
+<INITIAL> "message" => (MESSAGE);
+<INITIAL> "import" => (IMPORT);
+<INITIAL> "enum" => (ENUM);
+<INITIAL> "required" => (REQUIRED);
+<INITIAL> "optional" => (OPTIONAL);
+<INITIAL> "repeated" => (REPEATED);
+<INITIAL> "package" => (PACKAGE);
+<INITIAL> "." => (DOT);
+<INITIAL> "=" => (EQ);
+<INITIAL> ";" => (SEMICOLON);
+<INITIAL> "{" => (LBRACE);
+<INITIAL> "}" => (LBRACE);
+<INITIAL> "service" => (SERVICE);
 <INITIAL> "(" => (LPAREN);
 <INITIAL> ")" => (RPAREN);
-<INITIAL> "[" => (LSQ);
-<INITIAL> "]" => (RSQ);
-<INITIAL> "{" => (LBR);
-<INITIAL> "}" => (RBR);
-<INITIAL> "<" => (LA);
-<INITIAL> ">" => (RA);
-<INITIAL> all => (LIT_ALL);
-<INITIAL> ex => (LIT_EX);
-<INITIAL> and => (LIT_AND);
-<INITIAL> or => (LIT_OR);
-<INITIAL> imp => (LIT_IMP);
-<INITIAL> true => (LIT_TRUE);
-<INITIAL> false => (LIT_FALSE);
-<INITIAL> any => (LIT_ANY);
-<INITIAL> date => (LIT_DATE);
-<INITIAL> int => (LIT_INT);
-<INITIAL> string => (LIT_STRING);
-<INITIAL> COMPILE => (LIT_COMPILE);
+<INITIAL> "rpc" => (RPC);
+<INITIAL> "returns" => (RETURNS);
+<INITIAL> "double" => (DOUBLE);
+<INITIAL> "float" => (FLOAT);
+<INITIAL> "int32" => (INT32);
+<INITIAL> "int64" => (INT64);
+<INITIAL> "uint32" => (UINT32);
+<INITIAL> "uint64" => (UINT64);
+<INITIAL> "bool" => (BOOL);
+<INITIAL> "string" => (STRING);
+<INITIAL> "bytes" => (BYTES);
+<INITIAL> "unit" => (UNIT);
 
-<INITIAL> {integer} => (INT (Option.valOf (Int.fromString yytext)));
-<INITIAL> {date} => (DATE (string2date yytext));
-
-<INITIAL> {str} => (STR(extractstring (yytext)));
+<INITIAL> {str} => (STR (extractstring (yytext)));
 
 <INITIAL> {iden} => (ID (yytext));
+
+<INITIAL> {integer} => (FIELDNUMBER (Option.valOf (Int.fromString yytext)));
 
 <INITIAL> . => (print ("Unknown symbol: " ^ yytext ^ "\n"); continue());
 

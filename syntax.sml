@@ -30,11 +30,9 @@ type identifier = string
 
 datatype modifier = Required | Optional | Repeated
 
-datatype basetype = Double | Float | Int32 | Int64 | Uint32 
-		  | Uint64 | Bool | String | Bytes | Unit
-
-datatype gentype = BaseT of basetype 
-		 | UserT of identifier
+datatype gentype = Double | Float | Int32 | Int64 | Uint32 
+		  | Uint64 | Bool | String | Bytes | Unit 
+		  | UserT of identifier
 	
 datatype fielddecl = TypedeclF of identifier * modifier * gentype * fieldnumber
 		   | MessagedeclF of messagedecl
@@ -42,10 +40,9 @@ datatype fielddecl = TypedeclF of identifier * modifier * gentype * fieldnumber
 
 and efielddecl = Efielddecl of identifier * fieldnumber
 
-and enumdecl = Enumdecl of identifier * efielddecl list
-
 and messagedecl = Messagedecl of identifier * fielddecl list
 
+and enumdecl = Enumdecl of identifier * efielddecl list
 
 
 datatype rpcdecl = Rpcdecl of identifier * gentype * gentype
@@ -53,7 +50,8 @@ datatype rpcdecl = Rpcdecl of identifier * gentype * gentype
 
 datatype servicedecl = Servicedecl of identifier * rpcdecl list
 
-datatype package = Package of string
+datatype package = Package of string list 
+ (* List is the components of the name separated by "." *)
 
 datatype import = Import of string
 

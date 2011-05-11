@@ -6,3 +6,6 @@ Group is
       syntax.sml
 
       pb.g: ml-antlr
+      pb.lex: ml-ulex
+
+      pb-parser.sml
