@@ -158,26 +158,39 @@ end (* local *)
 
 exception DuplicateSymbolDefinition
 (* checks that name occurs in root exactly once. throws DuplicateSymbolDefinition if it appears twice *)
-fun find_symbol (Syntax.UserT (ident, qualifier)) (root : protofiletree) (found : bool) : bool = (
+fun find_symbol (qual, name: Syntax.qualifier*Syntax.identifier) (root: protofiletree) (found: bool) : bool = (
     case root of
-        ProtoFileTree (pkg_opt, [], []) => found
-      | ProtoFileTree (pkg_opt, d :: dl, subtree) => (
+        ProtoFileTree (pkg, [], []) => found
+      | ProtoFileTree (pkg, d :: dl, subtree) => (
             case d of 
                 (Syntax.MessageD (Syntax.Messagedecl (ident, _))) =>
-                    find_symbol name (ProtoFileTree (pkg_opt, dl, subtree)) (check_dup ident name found)
+                let
+                  val found' = check_dup (qual, name) (pkg, ident) found
+                in
+                    find_symbol (qual, name) (ProtoFileTree (pkg, dl, subtree)) found'
+                end
                | (Syntax.EnumD (Syntax.Enumdecl (ident, _))) => 
-                    find_symbol name (ProtoFileTree (pkg_opt, dl, subtree)) (check_dup ident name found)
-               | _ => find_symbol name (ProtoFileTree (pkg_opt, dl, subtree)) found
+                let
+                  val found' = check_dup (qual, name) (pkg, ident) found
+                in
+                    find_symbol (qual, name) (ProtoFileTree (pkg, dl, subtree)) found'
+                end
+               | _ => find_symbol (qual, name) (ProtoFileTree (pkg_opt, dl, subtree)) found
             )
-      | ProtoFileTree (pkg_opt, [], (child :: subtree)) =>
+      | ProtoFileTree (pkg, [], (child :: subtree)) =>
           let
-            val found' = find_symbol name child found
+            val found' = find_symbol (qual, name) child found
           in
-            find_symbol name (ProtoFileTree (pkg_opt, [], subtree)) found'
+            find_symbol (qual, name) (ProtoFileTree (pkg, [], subtree)) found'
           end
     )
 (* checks whether s matches s', and if it does, that this is not a duplicated definition *)
-and check_dup ident ident' found =
-  if ident = ident' andalso found then raise DuplicateSymbolDefinition
-  else (ident = ident' orelse found)
+and check_dup (qual, ident) (qual', ident') found =
+let
+  fun qualify q i = String.concatWith "." (q @ [i])
+  val qi = qualify qual ident
+  val qi' = qualify qual' ident'
+in
+  if qi = qi' andalso found then raise DuplicateSymbolDefinition
+  else (qi = qi' orelse found)
 end
