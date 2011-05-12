@@ -34,7 +34,7 @@ datatype modifier = Required | Optional | Repeated
 
 datatype gentype = Double | Float | Int32 | Int64 | Uint32 
 		  | Uint64 | Bool | String | Bytes | Unit 
-		  | UserT of qualified
+		  | UserT of (qualifier * identifier)
 	
 datatype fielddecl = TypedeclF of identifier * modifier * gentype * fieldnumber
 		   | MessagedeclF of messagedecl
@@ -81,6 +81,8 @@ fun modifier_to_string Required = "required"
   | modifier_to_string Optional = "optional"
   | modifier_to_string Repeated = "repeated"
 
+fun qualifier_to_string q = 
+    String.concatWith "." q
 
 fun gentype_to_string t =
     case t of
@@ -94,7 +96,10 @@ fun gentype_to_string t =
       | String => "string"
       | Bytes => "bytes"
       | Unit => "unit"
-      | UserT id => identifier_to_string id
+      | UserT (q,id) => 
+	case q of
+	    [] => identifier_to_string id
+	  | _ => (qualifier_to_string q) ^ "." ^ (identifier_to_string id)
 
 
 fun whitespace 0 = ""

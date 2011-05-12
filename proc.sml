@@ -35,15 +35,14 @@ exception ImportNotParsed
 exception DuplicatePackageDeclaration
 
 
-datatype protofiletree = ProtoFileTree of Syntax.package Option.option * Syntax.proto * protofiletree list
+datatype protofiletree = ProtoFileTree of Syntax.package * Syntax.proto * protofiletree list
+(* If Syntax.package = [], then no package was specified *)
 
 (* Convert a protofiletree to string by a post-order traversal *)
 
-fun protofiletree_to_string (ProtoFileTree (pkg_opt, proto, tl)): string = 
+fun protofiletree_to_string (ProtoFileTree (pkg, proto, tl)): string = 
     let val s1 = String.concatWith "" (List.map protofiletree_to_string tl)
-	val s2 = case pkg_opt of
-		     NONE => ""
-		   | SOME pkg => Syntax.package_to_string pkg
+	val s2 = Syntax.package_to_string pkg
 	val s3 = Syntax.proto_to_string proto
     in
 	s1 ^ s2 ^ s3 ^ "--------\n"
@@ -55,7 +54,7 @@ fun protofiletree_to_string (ProtoFileTree (pkg_opt, proto, tl)): string =
 
 fun expand_paths (fl: string list) (dl: Syntax.proto): protofiletree = 
     case dl of
-	[] => ProtoFileTree (NONE, [], [])
+	[] => ProtoFileTree (Syntax.Package [], [], [])
       | (d :: dl) =>
 	(case d of
 	     Syntax.ImportD (Syntax.Import i) => 
@@ -88,11 +87,11 @@ fun expand_paths (fl: string list) (dl: Syntax.proto): protofiletree =
 	     )
 	   | Syntax.PackageD pkg =>
 	     (* Package declaration *)
-	     let val (ProtoFileTree (pkg_opt, proto, tree)) = expand_paths fl dl
+	     let val (ProtoFileTree (pkg', proto, tree)) = expand_paths fl dl
 	     in
-		 case pkg_opt of
-		     NONE => ProtoFileTree (SOME pkg, proto, tree)
-		   | SOME _ => 
+		 case pkg' of
+		     Syntax.Package [] => ProtoFileTree (pkg, proto, tree)
+		   | Syntax.Package _ => 
 		     (print ("More than one package declaration in file: " ^ (hd fl)  ^ "\n" ^
 			     (import_path_to_string fl));
 		      raise DuplicatePackageDeclaration
@@ -100,9 +99,9 @@ fun expand_paths (fl: string list) (dl: Syntax.proto): protofiletree =
 	     end
 	   | _ => 
 	     (* Non-import, non-package declaration *)
-	     let val (ProtoFileTree (pkg_opt, proto, tree)) = expand_paths fl dl
+	     let val (ProtoFileTree (pkg, proto, tree)) = expand_paths fl dl
 	     in
-		 ProtoFileTree (pkg_opt, d :: proto, tree)
+		 ProtoFileTree (pkg, d :: proto, tree)
 	     end
 	)
 
@@ -158,26 +157,39 @@ end (* local *)
 
 exception DuplicateSymbolDefinition
 (* checks that name occurs in root exactly once. throws DuplicateSymbolDefinition if it appears twice *)
-fun find_symbol name (root : protofiletree) (found : bool) : bool = (
+fun find_symbol (qual, name: Syntax.qualifier*Syntax.identifier) (root: protofiletree) (found: bool) : bool = (
     case root of
-        ProtoFileTree (pkg_opt, [], []) => found
-      | ProtoFileTree (pkg_opt, d :: dl, subtree) => (
+        ProtoFileTree (pkg, [], []) => found
+      | ProtoFileTree (pkg, d :: dl, subtree) => (
             case d of 
                 (Syntax.MessageD (Syntax.Messagedecl (ident, _))) =>
-                    find_symbol name (ProtoFileTree (pkg_opt, dl, subtree)) (check_dup ident name found)
+                let
+                  val found' = check_dup (qual, name) (pkg, ident) found
+                in
+                    find_symbol (qual, name) (ProtoFileTree (pkg, dl, subtree)) found'
+                end
                | (Syntax.EnumD (Syntax.Enumdecl (ident, _))) => 
-                    find_symbol name (ProtoFileTree (pkg_opt, dl, subtree)) (check_dup ident name found)
-               | _ => find_symbol name (ProtoFileTree (pkg_opt, dl, subtree)) found
+                let
+                  val found' = check_dup (qual, name) (pkg, ident) found
+                in
+                    find_symbol (qual, name) (ProtoFileTree (pkg, dl, subtree)) found'
+                end
+               | _ => find_symbol (qual, name) (ProtoFileTree (pkg_opt, dl, subtree)) found
             )
-      | ProtoFileTree (pkg_opt, [], (child :: subtree)) =>
+      | ProtoFileTree (pkg, [], (child :: subtree)) =>
           let
-            val found' = find_symbol name child found
+            val found' = find_symbol (qual, name) child found
           in
-            find_symbol name (ProtoFileTree (pkg_opt, [], subtree)) found'
+            find_symbol (qual, name) (ProtoFileTree (pkg, [], subtree)) found'
           end
     )
 (* checks whether s matches s', and if it does, that this is not a duplicated definition *)
-and check_dup ident ident' found =
-  if ident = ident' andalso found then raise DuplicateSymbolDefinition
-  else (ident = ident' orelse found)
+and check_dup (qual, ident) (qual', ident') found =
+let
+  fun qualify q i = String.concatWith "." (q @ [i])
+  val qi = qualify qual ident
+  val qi' = qualify qual' ident'
+in
+  if qi = qi' andalso found then raise DuplicateSymbolDefinition
+  else (qi = qi' orelse found)
 end
