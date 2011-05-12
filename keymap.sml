@@ -40,7 +40,6 @@ structure KeyMap :> KEYMAP = struct
 type (''a, 'b) keymap = (''a * 'b) list
 
 exception AlreadyExists
-exception NotFound
 
 val empty = []
 
