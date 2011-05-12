@@ -28,11 +28,13 @@ structure Syntax = struct
 type fieldnumber = int
 type identifier = string
 
+type qualified = identifier list (* A.B.x, etc. *)
+
 datatype modifier = Required | Optional | Repeated
 
 datatype gentype = Double | Float | Int32 | Int64 | Uint32 
 		  | Uint64 | Bool | String | Bytes | Unit 
-		  | UserT of identifier
+		  | UserT of qualified
 	
 datatype fielddecl = TypedeclF of identifier * modifier * gentype * fieldnumber
 		   | MessagedeclF of messagedecl
