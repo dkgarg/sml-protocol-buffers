@@ -158,7 +158,7 @@ end (* local *)
 
 exception DuplicateSymbolDefinition
 (* checks that name occurs in root exactly once. throws DuplicateSymbolDefinition if it appears twice *)
-fun find_symbol name (root : protofiletree) (found : bool) : bool = (
+fun find_symbol (Syntax.UserT (ident, qualifier)) (root : protofiletree) (found : bool) : bool = (
     case root of
         ProtoFileTree (pkg_opt, [], []) => found
       | ProtoFileTree (pkg_opt, d :: dl, subtree) => (
