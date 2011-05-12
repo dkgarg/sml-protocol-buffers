@@ -145,9 +145,13 @@ gentype
     | "string" => ( Syntax.String )
     | "bytes" => ( Syntax.Bytes )
     | "unit" => ( Syntax.Unit )
-    | ID => ( Syntax.UserT ID )
+    | ID => ( Syntax.UserT ([], ID) )
+    | qualifier "." ID => ( Syntax.UserT (qualifier,ID) )
     ;
 
+qualifier 
+    : (ID)*
+    ;
 
 modifier
     : "required" => ( Syntax.Required )

@@ -81,7 +81,8 @@ fun modifier_to_string Required = "required"
   | modifier_to_string Optional = "optional"
   | modifier_to_string Repeated = "repeated"
 
-fun qualifier_to_string q = String.concatWith "." q
+fun qualifier_to_string q = 
+    String.concatWith "." q
 
 fun gentype_to_string t =
     case t of
@@ -95,7 +96,10 @@ fun gentype_to_string t =
       | String => "string"
       | Bytes => "bytes"
       | Unit => "unit"
-      | UserT (q,id) => (qualifier_to_string q) ^ "." ^ (identifier_to_string id)
+      | UserT (q,id) => 
+	case q of
+	    [] => identifier_to_string id
+	  | _ => (qualifier_to_string q) ^ "." ^ (identifier_to_string id)
 
 
 fun whitespace 0 = ""
