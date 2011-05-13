@@ -33,7 +33,7 @@ fun test (f: string) =
 	let val _ = print (Syntax.proto_to_string proto)
 	    val _ = print "#########################\n"
 	    val tree = Proc.expand_paths [f] proto
-	    val _ = Proc.check_fn_protofiletree tree
+	    val _ = Proc.check_unique_protofiletree tree
 	in
 	    print (Proc.protofiletree_to_string tree)
 	end

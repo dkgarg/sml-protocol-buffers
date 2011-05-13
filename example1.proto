@@ -13,6 +13,7 @@ message Person {
     WORK = 2;
   }
 
+
   message PhoneNumber {
     required string number = 1;
     optional example2a.PhoneType type = 2 ;

@@ -1,3 +1,3 @@
 package example2b;
 
-enum eg2b { blah = 1; bl = 1;}
+enum eg2b { blah = 1; bla = 2;}

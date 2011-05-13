@@ -107,56 +107,85 @@ fun expand_paths (fl: string list) (dl: Syntax.proto): protofiletree =
 	)
 
 
-(* Check that the field numbers are all unique *)
+(* Check that field numbers and declared nested types are all
+   unique. This does not check for duplication of declared identifiers at
+   the top level *)
 
 exception DuplicateFieldNumber
+exception DuplicateIdentifier
 
 local
     open Syntax 
 in
-fun check_fn_proto [] = ()
-  | check_fn_proto (d :: dl) =
+fun check_unique_proto [] = ()
+  | check_unique_proto (d :: dl) =
     (case d of
 	 PackageD _ => ()
        | ImportD _ => ()
-       | MessageD md => check_fn_messagedecl md
-       | EnumD ed => check_fn_enumdecl ed
+       | MessageD md => check_unique_messagedecl md
+       | EnumD ed => check_unique_enumdecl ed
        | ServiceD _ => ();
-     check_fn_proto dl
+     check_unique_proto dl
     )
-and check_fn_messagedecl (Messagedecl (_, fielddecllist)) =
-    check_fn_fielddecllist [] fielddecllist
+and check_unique_messagedecl (Messagedecl (_, fielddecllist)) =
+    check_unique_fielddecllist [] [] fielddecllist
 
-and check_fn_fielddecllist inlist [] = ()
-  | check_fn_fielddecllist inlist ((TypedeclF (_, _, _, n)) :: dl) =
-    if (List.exists (fn i => i = n) inlist)
+and check_unique_fielddecllist numlist idlist [] = ()
+  | check_unique_fielddecllist numlist idlist ((TypedeclF (id, _, _, n)) :: dl) =
+    if (List.exists (fn i => i = n) numlist)
     then 
 	(print ("Duplicate field number: " ^ (Int.toString n) ^
 		" in message declaration\n");
 	 raise DuplicateFieldNumber)
-    else 
-	check_fn_fielddecllist (n :: inlist) dl
-  | check_fn_fielddecllist inlist ((MessagedeclF md) :: dl) =
-    (check_fn_messagedecl md; check_fn_fielddecllist inlist dl)
-  | check_fn_fielddecllist inlist ((EnumdeclF ed) :: dl) =
-    (check_fn_enumdecl ed; check_fn_fielddecllist inlist dl)
+    else if (List.exists (fn id' => id = id') idlist)
+    then 
+	(print ("Duplicate identifier declaration: " ^ (Syntax.identifier_to_string id) ^
+		" in message declaration\n");
+	 raise DuplicateIdentifier)
+    else
+	check_unique_fielddecllist (n :: numlist) (id :: idlist) dl
+  | check_unique_fielddecllist numlist idlist ((MessagedeclF (md as Messagedecl(id, _))) :: dl) =
+    (check_unique_messagedecl md; 
+     if (List.exists (fn id' => id = id') idlist)
+     then 
+	 (print ("Duplicate identifier declaration: " ^ (Syntax.identifier_to_string id) ^
+		 " in message declaration\n");
+	  raise DuplicateIdentifier)
+     else
+	 check_unique_fielddecllist numlist (id :: idlist) dl
+    )
+  | check_unique_fielddecllist numlist idlist ((EnumdeclF (ed as Enumdecl(id, _))) :: dl) =
+    (check_unique_enumdecl ed; 
+     if (List.exists (fn id' => id = id') idlist)
+     then 
+	 (print ("Duplicate identifier declaration: " ^ (Syntax.identifier_to_string id) ^
+		 " in message declaration\n");
+	  raise DuplicateIdentifier)
+     else
+	 check_unique_fielddecllist numlist (id :: idlist) dl
+    )
 
-and check_fn_enumdecl (Enumdecl (_, efielddecllist)) =
-    check_fn_efielddecllist [] efielddecllist
+and check_unique_enumdecl (Enumdecl (_, efielddecllist)) =
+    check_unique_efielddecllist [] [] efielddecllist
 
-and check_fn_efielddecllist inlist [] = ()
-  | check_fn_efielddecllist inlist ((efl as (Efielddecl (_, n))) :: dl) =
-    if (List.exists (fn i => i = n) inlist)
+and check_unique_efielddecllist numlist idlist [] = ()
+  | check_unique_efielddecllist numlist idlist ((efl as (Efielddecl (id, n))) :: dl) =
+    if (List.exists (fn i => i = n) numlist)
     then 
 	(print ("Duplicate field number: " ^ (Int.toString n) ^
 		" in enum declaration\n");
 	 raise DuplicateFieldNumber)
-    else 
-	check_fn_efielddecllist (n :: inlist) dl
+    else if (List.exists (fn id' => id = id') idlist)
+    then
+	(print ("Duplicate identifier declaration: " ^ (Syntax.identifier_to_string id) ^
+		" in message declaration\n");
+	 raise DuplicateIdentifier)
+    else
+	check_unique_efielddecllist (n :: numlist) (id :: idlist) dl
 
-fun check_fn_protofiletree (ProtoFileTree (_, dl, tl)) = 
-    (check_fn_proto dl;
-     List.foldr (fn (t, ()) => check_fn_protofiletree t) () tl
+fun check_unique_protofiletree (ProtoFileTree (_, dl, tl)) = 
+    (check_unique_proto dl;
+     List.foldr (fn (t, ()) => check_unique_protofiletree t) () tl
     )
     
 end (* local *)
@@ -191,9 +220,13 @@ end
 
 
 
+(* Construct a list of qualified identifiers declared at the top level in a protofiletree *)
 
-(* Construct a list of identifiers declared at the top level in a protofiletree *)
 
+exception Unimplemented
+
+fun list_ids_proto (p: Syntax.proto) (qual_opt: Syntax.qualifier Option.option)
+    : (Syntax.qualifier * Syntax.identifier) Set.set = raise Unimplemented
 
 
 (* exception DuplicateSymbolDefinition *)
