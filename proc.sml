@@ -233,16 +233,60 @@ fun list_ids_proto (p: Syntax.proto) (qual: Syntax.qualifier): (Syntax.qualifier
 exception UnboundIdentifier
 local
   type qualifiedname = Syntax.qualifier * Syntax.identifier
+  type context = qualifiedname Set.set
 in
-  val check_closed_protofiletree (root : protofiletree) (vars : qualifiedname set) : () = 
+  fun check_closed_protofiletree (root : protofiletree) (vars : context) : unit = 
     raise UnboundIdentifier
-  val check_closed_file ((pkg, proto) : (Syntax.package * Syntax.proto)) (vars : qualifiedname set) : () =
+  fun check_closed_file ((pkg, proto) : (Syntax.package * Syntax.proto)) (vars : context) : unit =
     raise UnboundIdentifier
 
-  fun check_closed_message (pkg : Syntax.package) (Syntax.Messagedecl (ident, dl): messagedecl) =
-    raise UnboundIdentifier
-  and check_closed_enum (pkg: Syntax.package) (Syntax.Enumdecl (ident, dl): enumdecl) =
-    raise UnboundIdentifier
+  fun add_message_decls (Syntax.Messagedecl (ident, nil)) (vars: context) = vars
+    | add_message_decls (Syntax.Messagedecl (ident, d :: dl)) (vars: context) = (
+        case d of 
+            Syntax.MessagedeclF (Syntax.Messagedecl (ident', _)) =>
+            let
+              val vars' = (Set.add vars (nil, ident')) handle Set.AlreadyExists => vars
+            in
+              add_message_decls (Syntax.Messagedecl (ident, dl)) vars'
+            end
+          | Syntax.EnumdeclF (Syntax.Enumdecl (ident', _)) =>
+            let
+              val vars' = (Set.add vars (nil, ident')) handle Set.AlreadyExists => vars
+            in
+              add_message_decls (Syntax.Messagedecl (ident, dl)) vars'
+            end
+          |  _ => 
+            add_message_decls (Syntax.Messagedecl (ident, dl)) vars 
+       )
+
+  (* Checks that all of the UserT field declarations in the specified message are properly defined.
+   * pkg refers to the package containing the message.
+   * vars is assumed to contain all of the declarations in that file, without qualification *)
+  fun check_closed_message 
+    ((Syntax.Package pkg) : Syntax.package) 
+    (Syntax.Messagedecl (ident, dl): Syntax.messagedecl) 
+    (vars: context) =
+  let
+    val vars' = add_message_decls (Syntax.Messagedecl (ident, dl)) vars
+    fun loop nil = ()
+
+      (* check the user-type declaration against the map *)
+      | loop ((Syntax.TypedeclF (_, _, Syntax.UserT (qual, ident'), _)) :: dl) =
+          if (Set.exists vars' (qual, ident')) then loop dl
+          else if (pkg = qual andalso Set.exists vars' (nil, ident')) then loop dl
+          else raise UnboundIdentifier
+
+      (* everything else is built in *)
+      | loop ((Syntax.TypedeclF _) :: dl) = loop dl
+
+      (* recursively check this message decl *)
+      | loop ((Syntax.MessagedeclF md) :: dl) = (check_closed_message (Syntax.Package pkg) md vars'; loop dl)
+
+      (* enums don't contain any inner user types *)
+      | loop ((Syntax.EnumdeclF _) :: dl) = loop dl
+  in
+    loop dl
+  end
 end
 
 end
