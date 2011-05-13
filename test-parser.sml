@@ -25,14 +25,15 @@ THE SOFTWARE.
 structure TestParser = struct
 
 
+
 fun test (f: string) =
     case PBParser.parse_pb_file f of
 	NONE => ()
       | SOME proto =>
 	let val _ = print (Syntax.proto_to_string proto)
-	    val _ = Proc.check_fn_proto proto
 	    val _ = print "#########################\n"
 	    val tree = Proc.expand_paths [f] proto
+	    val _ = Proc.check_fn_protofiletree tree
 	in
 	    print (Proc.protofiletree_to_string tree)
 	end

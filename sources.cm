@@ -8,6 +8,8 @@ Group is
       pb.g: ml-antlr
       pb.lex: ml-ulex
 
+      keymap.sml
+
       pb-parser.sml
       proc.sml
 

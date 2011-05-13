@@ -28,7 +28,7 @@ structure Syntax = struct
 type fieldnumber = int
 type identifier = string
 
-type qualified = identifier list (* A.B.x, etc. *)
+type qualifier = identifier list (* A.B.x, etc. *)
 
 datatype modifier = Required | Optional | Repeated
 
