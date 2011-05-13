@@ -222,12 +222,27 @@ end
 
 (* Construct a list of qualified identifiers declared at the top level in a protofiletree *)
 
+type idset = (Syntax.qualifier * Syntax.identifier) Set.set
 
 exception Unimplemented
 
-fun list_ids_proto (p: Syntax.proto) (qual: Syntax.qualifier): (Syntax.qualifier * Syntax.identifier) Set.set = 
-    raise Unimplemented
+fun list_ids_proto (set: idset) (qual: Syntax.qualifier) (p: Syntax.proto) : idset = 
+    List.foldr (fn (d, set') => list_ids_decl set' qual d) set p
 
+and list_ids_decl set qual d = 
+    case d of
+	PackageD _ => set
+      | ImportD _ => set
+      | MessageD (Messagedecl (id, fl)) => 
+	((Set.add set (qual, id)) 
+	 handle Set.AlreadyExists => 
+		(print ("Type identifier: " ^ (Syntax.gentype_to_string (Syntax.UserT (qual, id))) ^
+			" is defined twice in the same scope\n");
+		 raise DuplicateIdentifier
+	       ))
+      | 
+
+	    
 
 
 exception UnboundIdentifier
