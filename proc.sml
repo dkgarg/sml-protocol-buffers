@@ -228,21 +228,25 @@ exception Unimplemented
 
 fun list_ids_proto (set: idset) (qual: Syntax.qualifier) (p: Syntax.proto) : idset = 
     List.foldr (fn (d, set') => list_ids_decl set' qual d) set p
-
 and list_ids_decl set qual d = 
     case d of
-	PackageD _ => set
-      | ImportD _ => set
-      | MessageD (Messagedecl (id, fl)) => 
+	Syntax.PackageD _ => set
+      | Syntax.ImportD _ => set
+      | Syntax.MessageD (Syntax.Messagedecl (id, fl)) => 
 	((Set.add set (qual, id)) 
 	 handle Set.AlreadyExists => 
 		(print ("Type identifier: " ^ (Syntax.gentype_to_string (Syntax.UserT (qual, id))) ^
 			" is defined twice in the same scope\n");
 		 raise DuplicateIdentifier
 	       ))
-      | 
-
-	    
+      | Syntax.EnumD (Syntax.Enumdecl (id, fl)) =>
+        ((Set.add set (qual, id))
+         handle Set.AlreadyExists =>
+	        (print ("Type identifier: " ^ (Syntax.gentype_to_string (Syntax.UserT (qual, id))) ^
+			" is defined twice in the same scope\n");
+		 raise DuplicateIdentifier
+	       ))
+      | Syntax.ServiceD _ => set
 
 
 exception UnboundIdentifier
