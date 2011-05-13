@@ -225,8 +225,9 @@ end
 
 exception Unimplemented
 
-fun list_ids_proto (p: Syntax.proto) (qual_opt: Syntax.qualifier Option.option)
-    : (Syntax.qualifier * Syntax.identifier) Set.set = raise Unimplemented
+fun list_ids_proto (p: Syntax.proto) (qual: Syntax.qualifier): (Syntax.qualifier * Syntax.identifier) Set.set = 
+    raise Unimplemented
+
 
 
 (* exception DuplicateSymbolDefinition *)
