@@ -65,8 +65,6 @@ datatype decl = PackageD of package
 
 type proto = decl list 
 
-
-
 (* Functions to convert the syntax to string *)
 
 fun map_and_concat (f: 'a -> string) (l: 'a list): string = 
