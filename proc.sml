@@ -226,6 +226,8 @@ type idset = (Syntax.qualifier * Syntax.identifier) Set.set
 
 exception Unimplemented
 
+fun list_ids_protofiletree (set : idset) (root: protofiletree) : idset = raise Unimplemented
+
 fun list_ids_proto (set: idset) (qual: Syntax.qualifier) (p: Syntax.proto) : idset = 
     List.foldr (fn (d, set') => list_ids_decl set' qual d) set p
 and list_ids_decl set qual d = 
@@ -254,11 +256,6 @@ local
   type qualifiedname = Syntax.qualifier * Syntax.identifier
   type context = qualifiedname Set.set
 in
-  fun check_closed_protofiletree (root : protofiletree) (vars : context) : unit = 
-    raise UnboundIdentifier
-  fun check_closed_file ((pkg, proto) : (Syntax.package * Syntax.proto)) (vars : context) : unit =
-    raise UnboundIdentifier
-
   fun add_message_decls (Syntax.Messagedecl (ident, nil)) (vars: context) = vars
     | add_message_decls (Syntax.Messagedecl (ident, d :: dl)) (vars: context) = (
         case d of 
@@ -306,6 +303,26 @@ in
   in
     loop dl
   end
+
+  fun check_closed_file ((pkg, proto) : (Syntax.package * Syntax.proto)) (vars : context) : unit =
+  let
+    (* add to the context the declarations in this file *)
+    val vars' = list_ids_proto vars nil proto
+    fun loop nil = ()
+      | loop ((Syntax.MessageD md) :: dl) = (check_closed_message pkg md vars'; loop dl)
+      | loop (_ :: dl) = loop dl
+  in
+    loop proto
+  end
+
+  fun check_closed_protofiletree (root as ProtoFileTree (pkg, proto, pl): protofiletree) =
+  let
+    val vars = list_ids_protofiletree Set.empty root 
+    val _ = check_closed_file (pkg, proto) vars
+  in
+    (map check_closed_protofiletree pl; ())
+  end
+
 end
 
 end
