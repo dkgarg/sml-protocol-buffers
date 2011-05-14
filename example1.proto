@@ -16,7 +16,7 @@ message Person {
 
   message PhoneNumber {
     required string number = 1;
-    optional example2a.PhoneType type = 2 ;
+    optional PhoneType type = 2 ;
   }
 
   repeated PhoneNumber phone = 4;

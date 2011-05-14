@@ -35,7 +35,6 @@ exception ImportPathCycle
 exception ImportNotParsed
 exception DuplicatePackageDeclaration
 
-
 datatype protofiletree = ProtoFileTree of Syntax.package * Syntax.proto * protofiletree list
 (* If Syntax.package = [], then no package was specified *)
 
@@ -300,7 +299,7 @@ in
       | loop ((Syntax.TypedeclF (_, _, Syntax.UserT (qual, ident'), _)) :: dl) =
           if (Set.exists vars' (qual, ident')) then loop dl
           else if (pkg = qual andalso Set.exists vars' (nil, ident')) then loop dl
-          else raise UnboundIdentifier
+          else (print ("unbound identifier " ^ (String.concatWith "." (qual @ [ident'])) ^ "\n"); raise UnboundIdentifier)
 
       (* everything else is built in *)
       | loop ((Syntax.TypedeclF _) :: dl) = loop dl
