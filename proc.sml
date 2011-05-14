@@ -226,10 +226,11 @@ type idset = (Syntax.qualifier * Syntax.identifier) Set.set
 
 exception Unimplemented
 
-fun list_ids_protofiletree (set : idset) (root: protofiletree) : idset = raise Unimplemented
-
+(* goes through the file, adding each declaration to the set with the given qualifier *)
 fun list_ids_proto (set: idset) (qual: Syntax.qualifier) (p: Syntax.proto) : idset = 
     List.foldr (fn (d, set') => list_ids_decl set' qual d) set p
+
+(* adds the declaration's name to the set *)
 and list_ids_decl set qual d = 
     case d of
 	Syntax.PackageD _ => set
@@ -249,6 +250,15 @@ and list_ids_decl set qual d =
 		 raise DuplicateIdentifier
 	       ))
       | Syntax.ServiceD _ => set
+
+(* traverses over a protofiletree, and adds the qualified name of each variable to the set *)
+fun list_ids_protofiletree (set : idset) (ProtoFileTree (Syntax.Package pkg, proto, pl): protofiletree) : idset =
+let
+  val set' = list_ids_proto set pkg proto
+in
+  List.foldr (fn (p, set'') => list_ids_protofiletree set'' p) set' pl
+end
+
 
 
 exception UnboundIdentifier
@@ -306,8 +316,9 @@ in
 
   fun check_closed_file ((pkg, proto) : (Syntax.package * Syntax.proto)) (vars : context) : unit =
   let
-    (* add to the context the declarations in this file *)
-    val vars' = list_ids_proto vars nil proto
+    (* add to the context the declarations in this file. if the file has no package name, this will
+    * throw an exception, and we can just ignore it. *)
+    val vars' = (list_ids_proto vars nil proto) handle Set.AlreadyExists => vars
     fun loop nil = ()
       | loop ((Syntax.MessageD md) :: dl) = (check_closed_message pkg md vars'; loop dl)
       | loop (_ :: dl) = loop dl
