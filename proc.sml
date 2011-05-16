@@ -330,13 +330,35 @@ in
   end
 
 
-  exception MissingPackageDeclaration
-
-  fun check_has_packages (ProtoFileTree ([], _, pl)) = raise MissingPackageDeclaration
-    | check_has_packages (ProtoFileTree (_, _, pl)) = 
-      (List.map check_has_packages pl;
-       ()
-      )
 end
+
+exception MissingPackageName
+exception QualifiedPackageName
+exception DuplicatePackageName
+
+fun check_packages (p: protofiletree) =
+    let
+	fun check_packages_h _ (ProtoFileTree (Syntax.Package [], _, _)) = 
+	    raise MissingPackageName
+	  | check_packages_h set (ProtoFileTree (Syntax.Package [x], _, pl)) = 
+	    if (Set.exists set [x]) 
+	    then
+		raise DuplicatePackageName
+	    else
+		let val set' = Set.add set [x]
+		in
+		    List.foldr (fn (p, set) => check_packages_h set p) set' pl
+		end
+	  | check_packages_h _ _ = raise QualifiedPackageName
+
+    in
+	check_packages_h Set.empty p
+    end
+
+fun check_proto_tree tree = 
+    (check_unique_protofiletree tree;
+     check_packages tree;
+     check_closed_protofiletree tree
+    )
 
 end
