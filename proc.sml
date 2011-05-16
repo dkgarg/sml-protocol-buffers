@@ -326,9 +326,17 @@ in
     val vars = list_ids_protofiletree Set.empty root 
     val _ = check_closed_file (pkg, proto) vars
   in
-    (map check_closed_protofiletree pl; ())
+    (List.map check_closed_protofiletree pl; ())
   end
 
+
+  exception MissingPackageDeclaration
+
+  fun check_has_packages (ProtoFileTree ([], _, pl)) = raise MissingPackageDeclaration
+    | check_has_packages (ProtoFileTree (_, _, pl)) = 
+      (List.map check_has_packages pl;
+       ()
+      )
 end
 
 end
