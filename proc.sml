@@ -317,7 +317,7 @@ in
   let
     (* add to the context the declarations in this file. if the file has no package name, this will
     * throw an exception, and we can just ignore it. *)
-    val vars' = (list_ids_proto vars nil proto) handle Set.AlreadyExists => vars
+    val vars' = (list_ids_proto vars nil proto) handle DuplicateIdentifier => vars
     fun loop nil = ()
       | loop ((Syntax.MessageD md) :: dl) = (check_closed_message pkg md vars'; loop dl)
       | loop (_ :: dl) = loop dl
@@ -327,7 +327,7 @@ in
 
   fun check_closed_protofiletree (root as ProtoFileTree (pkg, proto, pl): protofiletree) =
   let
-    val vars = list_ids_protofiletree Set.empty root 
+    val vars = list_ids_protofiletree Set.empty root
     val _ = check_closed_file (pkg, proto) vars
   in
     (map check_closed_protofiletree pl; ())

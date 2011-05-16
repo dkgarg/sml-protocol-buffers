@@ -82,6 +82,8 @@ fun modifier_to_string Required = "required"
 fun qualifier_to_string q = 
     String.concatWith "." q
 
+fun package_to_string (Package q) = qualifier_to_string q
+
 fun gentype_to_string t =
     case t of
 	Double => "double"
