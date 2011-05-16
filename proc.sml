@@ -257,6 +257,7 @@ end
 
 
 exception UnboundIdentifier
+exception PrematureQualifier
 local
   type qualifiedname = Syntax.qualifier * Syntax.identifier
   type context = qualifiedname Set.set
@@ -294,7 +295,6 @@ in
       (* check the user-type declaration against the map *)
       | loop ((Syntax.TypedeclF (_, _, Syntax.UserT (qual, ident'), _)) :: dl) =
           if (Set.exists vars' (qual, ident')) then loop dl
-          else if (pkg = qual andalso Set.exists vars' (nil, ident')) then loop dl
           else (print ("unbound identifier " ^ (String.concatWith "." (qual @ [ident'])) ^ "\n"); raise UnboundIdentifier)
 
       (* everything else is built in *)
@@ -323,7 +323,8 @@ in
 
   fun check_closed_protofiletree (root as ProtoFileTree (pkg, proto, pl): protofiletree) =
   let
-    val vars = list_ids_protofiletree Set.empty root
+    (*val vars = list_ids_protofiletree Set.empty root *)
+    val vars = foldr (fn (p, set) => list_ids_protofiletree set p) Set.empty pl
     val _ = check_closed_file (pkg, proto) vars
   in
     (List.map check_closed_protofiletree pl; ())
@@ -332,11 +333,14 @@ in
 
   exception MissingPackageDeclaration
 
+  fun check_has_packages _ = ()
+  (*
   fun check_has_packages (ProtoFileTree ([], _, pl)) = raise MissingPackageDeclaration
     | check_has_packages (ProtoFileTree (_, _, pl)) = 
       (List.map check_has_packages pl;
        ()
       )
+  *)
 end
 
 end
