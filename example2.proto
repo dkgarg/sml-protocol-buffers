@@ -1,6 +1,6 @@
 import "example2b.proto";
 
-package opter;
+package example2;
 
 enum my_bool {
      my_false = 1;

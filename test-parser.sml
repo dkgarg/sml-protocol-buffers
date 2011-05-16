@@ -34,8 +34,10 @@ fun test (f: string) =
 	    val _ = print "#########################\n"
 	    val tree = Proc.expand_paths [f] proto
 	    val _ = Proc.check_proto_tree tree
+	    val output = CompilerSML.compile_proto ("abc", proto)
 	in
-	    print (Proc.protofiletree_to_string tree)
+	    print (Proc.protofiletree_to_string tree);
+	    print output
 	end
 
 end
