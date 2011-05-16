@@ -237,17 +237,13 @@ and list_ids_decl set qual d =
       | Syntax.MessageD (Syntax.Messagedecl (id, fl)) => 
 	((Set.add set (qual, id)) 
 	 handle Set.AlreadyExists => 
-		(print ("Type identifier: " ^ (Syntax.gentype_to_string (Syntax.UserT (qual, id))) ^
-			" is defined twice in the same scope\n");
-		 raise DuplicateIdentifier
-	       ))
+		raise DuplicateIdentifier
+	)
       | Syntax.EnumD (Syntax.Enumdecl (id, fl)) =>
         ((Set.add set (qual, id))
          handle Set.AlreadyExists =>
-	        (print ("Type identifier: " ^ (Syntax.gentype_to_string (Syntax.UserT (qual, id))) ^
-			" is defined twice in the same scope\n");
-		 raise DuplicateIdentifier
-	       ))
+		raise DuplicateIdentifier
+	)
       | Syntax.ServiceD _ => set
 
 (* traverses over a protofiletree, and adds the qualified name of each variable to the set *)
