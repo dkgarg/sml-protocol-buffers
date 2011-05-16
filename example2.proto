@@ -1,5 +1,7 @@
 import "example2b.proto";
 
+package example2;
+
 enum my_bool {
      my_false = 1;
      my_true = 2;
