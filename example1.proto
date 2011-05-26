@@ -22,3 +22,17 @@ message Person {
   repeated PhoneNumber phone = 4;
   required opter.my_bool bla = 6;
 }
+
+
+% structure Person = struct
+%  structure PhoneType = struct
+%    datatype t = MOBILE | HOME | WORK
+%  end
+
+%  structure PhoneNumber = struct
+%    type t = {number: string, type: PhoneType.t}
+%  end	    
+%
+%  type t = {name: string, id: Int32.int, email: string Option.option,
+%            phone: PhoneNumber.t List.list, bla: opter.my_bool.t}
+% end
